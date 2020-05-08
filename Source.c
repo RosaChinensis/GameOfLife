@@ -1,3 +1,5 @@
+//Program will represent conway's game of life
+
 #include <stdio.h>
 
 int main() {

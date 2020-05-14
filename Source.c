@@ -2,6 +2,7 @@
  * Если она живая, и у нее есть 2 или 3 живые соседки, она остается живой, в противном случае умирает.
 */
 
+#include <SDL.h>
 #include <stdio.h>
 #include <stdlib.h>
 //#define _CRT_SECURE_NO_WARNINGS

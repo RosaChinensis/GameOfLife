@@ -453,7 +453,7 @@ void gameLoop(cell* desk, unsigned short height, unsigned short width, unsigned 
             if (quit != 1){
                 state = Conway(desk, height, width, state);
                 printDesk(desk, height, width, state);
-                SDL_Delay(delay); //Could be not default
+                SDL_Delay(delay);
             }
         }
     }

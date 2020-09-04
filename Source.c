@@ -288,7 +288,7 @@ unsigned short Conway(cell* desk, unsigned short height, unsigned short width, u
                     neighbors_alive += desk[(i - 1) * width + j].state_2;
                 }
                 else if (i == 0) {
-                    neighbors_alive += desk[(height - 1) * width + j].state_1;
+                    neighbors_alive += desk[(height - 1) * width + j].state_2;
                 }
 
                 //North East
@@ -387,6 +387,7 @@ unsigned short Conway(cell* desk, unsigned short height, unsigned short width, u
 }
 
 
+
 //Рисовка начального состояния игрального поля
 void startDraw(cell* desk, unsigned short height, unsigned short width){
 
@@ -432,7 +433,7 @@ void startDraw(cell* desk, unsigned short height, unsigned short width){
 
 }
 
-void gameLoop(cell* desk, unsigned short height, unsigned short width) {
+void gameLoop(cell* desk, unsigned short height, unsigned short width, unsigned short delay) {
 
     unsigned short quit = 0;
     SDL_Event e;
@@ -452,7 +453,7 @@ void gameLoop(cell* desk, unsigned short height, unsigned short width) {
             if (quit != 1){
                 state = Conway(desk, height, width, state);
                 printDesk(desk, height, width, state);
-                SDL_Delay(2000); //Could be not default
+                SDL_Delay(delay); //Could be not default
             }
         }
     }
@@ -472,11 +473,14 @@ void fillingZeros(cell* desk, unsigned short height, unsigned short width) {
 void Start() {
     unsigned short height;
     unsigned short width;
+    unsigned short delay;
 
     printf("Height: ");
     scanf("%hd", &height);
     printf("Width: ");
     scanf("%hd", &width);
+    printf("Delay: ");
+    scanf("%hd", &delay);
 
 
     cell* desk = NULL;
@@ -485,7 +489,7 @@ void Start() {
     fillingZeros(desk, height, width);
 
     startDraw(desk, height, width);
-    gameLoop(desk, height, width);
+    gameLoop(desk, height, width, delay*1000);
 
 
 

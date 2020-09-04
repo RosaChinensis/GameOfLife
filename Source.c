@@ -1,9 +1,6 @@
 /* Если клетка мертвая, а вокруг нее ровно три живые, то она становится в следующем поколении живой.
    Если она живая, и у нее есть 2 или 3 живые соседки, она остается живой, в противном случае умирает.
 */
-
-//check [4][5]
-
 #include <SDL.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -14,10 +11,6 @@
 //Screen dimension constants
 const int SCREEN_WIDTH = 640;
 const int SCREEN_HEIGHT = 480;
-
-//Size of desk
-#define NUM_CELL_X 5
-#define NUM_CELL_Y 5
 
 
 //SDL things
@@ -97,28 +90,30 @@ void closer()
     SDL_Quit();
 }
 
-void printDesk(cell** desk, unsigned short state) {
-
-    cell* p_desk = (cell*)desk;
+void printDesk(cell* desk, unsigned short height, unsigned short width, unsigned short state) {
 
     //Clear screen
     SDL_SetRenderDrawColor(gRenderer, 0xFF, 0xFF, 0xFF, 0xFF);
     SDL_RenderClear(gRenderer);
 
 
-    //Draw gray vertical lines
+    //Draw gray vertical & horisontal lines
     SDL_SetRenderDrawColor(gRenderer, 0x80, 0x80, 0x80, 0xFF);
 
-    for (int i = 1; i < 5; i++) {
-        SDL_RenderDrawLine(gRenderer, i * (SCREEN_WIDTH / 5), 0, i * (SCREEN_WIDTH / 5), SCREEN_HEIGHT);
-        SDL_RenderDrawLine(gRenderer, 0, i * (SCREEN_HEIGHT / 5), SCREEN_WIDTH, i * (SCREEN_HEIGHT / 5));
+    for (int i = 1; i <= height + 1 ; i++) {
+        SDL_RenderDrawLine(gRenderer, i * (SCREEN_WIDTH / width), 0, i * (SCREEN_WIDTH / width), SCREEN_HEIGHT);
     }
 
+    for (int i = 1; i <= width + 1; i++) {
+        SDL_RenderDrawLine(gRenderer, 0, i * (SCREEN_HEIGHT / height), SCREEN_WIDTH, i * (SCREEN_HEIGHT / height));
+    }
+
+
     if (state == 1) {
-        for (int i = 0; i < 5; i++) {
-            for (int j = 0; j < 5; j++) {
-                if (p_desk[j * NUM_CELL_Y + i].state_1 == 1) {
-                    SDL_Rect fillRect = { i * (SCREEN_WIDTH / 5), j * (SCREEN_HEIGHT / 5), SCREEN_WIDTH / 5, SCREEN_HEIGHT / 5 };
+        for (int i = 0; i < height; i++) {
+            for (int j = 0; j < width; j++) {
+                if (desk[i * width + j].state_1 == 1) {
+                    SDL_Rect fillRect = { j * (SCREEN_WIDTH / width), i * (SCREEN_HEIGHT / height), SCREEN_WIDTH / width, SCREEN_HEIGHT / height };
                     SDL_SetRenderDrawColor(gRenderer, 0x80, 0x80, 0x80, 0xFF);
                     SDL_RenderFillRect(gRenderer, &fillRect);
                 }
@@ -126,10 +121,10 @@ void printDesk(cell** desk, unsigned short state) {
         }
     }
     else if (state == 2) {
-        for (int i = 0; i < 5; i++) {
-            for (int j = 0; j < 5; j++) {
-                if (p_desk[j * NUM_CELL_Y + i].state_2 == 1) {
-                    SDL_Rect fillRect = { i * (SCREEN_WIDTH / 5), j * (SCREEN_HEIGHT / 5), SCREEN_WIDTH / 5, SCREEN_HEIGHT / 5 };
+        for (int i = 0; i < height; i++) {
+            for (int j = 0; j < width; j++) {
+                if (desk[i * width+ j].state_2 == 1) {
+                    SDL_Rect fillRect = { j * (SCREEN_WIDTH / width), i * (SCREEN_HEIGHT / height), SCREEN_WIDTH / width, SCREEN_HEIGHT / height };
                     SDL_SetRenderDrawColor(gRenderer, 0x80, 0x80, 0x80, 0xFF);
                     SDL_RenderFillRect(gRenderer, &fillRect);
                 }
@@ -146,108 +141,246 @@ void printDesk(cell** desk, unsigned short state) {
 }
 
 
-unsigned short Conway(cell** desk, unsigned int height, unsigned int width, unsigned short state){
-
+// Алгоритм, принимающий доску в состоянии state_n -- предки,
+// и заполняющий на его основе state_k -- потомки. Возвращает переменную state, в которой номер k
+// полученных потомков - 1 или 2 (для печати)
+unsigned short Conway(cell* desk, unsigned short height, unsigned short width, unsigned short state) {
     unsigned int i;
     unsigned int j;
 
-    cell *p_desk = (cell *)desk;
-
     unsigned short is_cell_alive = 0;
-    unsigned short neighbors_alive = 0;//количество живых соседей
-    if(state == 1) {
+    unsigned short neighbors_alive = 0;
+    if (state == 1) {
         for (i = 0; i < height; ++i) {
             for (j = 0; j < width; ++j) {
-                if(i >= 1 && j >= 1){
-                    neighbors_alive += p_desk[(j - 1) * height + (i - 1)].state_1;
+
+                //North West cell
+                if (i >= 1 && j >= 1) {
+                    neighbors_alive += desk[(i - 1) * width + (j - 1)].state_1;
                 }
-                if(i >= 1){
-                    neighbors_alive += p_desk[j * height + (i - 1)].state_1;
+                else if (i == 0 && j == 0) {
+                    neighbors_alive += desk[(height - 1) * width + (width - 1)].state_1;
                 }
-                if(i >= 1 && j < (width - 1)){
-                    neighbors_alive += p_desk[(j + 1) * height + (i - 1)].state_1;
+                else if (i == 0 && j >= 1) {
+                    neighbors_alive += desk[(height - 1) * width + (j - 1)].state_1;
                 }
-                if(j >= 1){
-                    neighbors_alive += p_desk[(j - 1) * height + i].state_1;
-                }
-                if(j < (width - 1)){
-                    neighbors_alive += p_desk[(j + 1) * height + i].state_1;
-                }
-                if(i < (height - 1) && j >= 1){
-                    neighbors_alive += p_desk[(j - 1) * height + (i + 1)].state_1;
-                }
-                if(i < (height - 1)){
-                    neighbors_alive += p_desk[j * height + (i + 1)].state_1;
-                }
-                if(i < (height - 1) && j < (width - 1)){
-                    neighbors_alive += p_desk[(j + 1) * height + (i + 1)].state_1;
+                else if (i >= 1 && j == 0) {
+                    neighbors_alive += desk[(i - 1) * width + (width - 1)].state_1;
                 }
 
-                is_cell_alive = p_desk[j * height + i].state_1;
-                if(is_cell_alive){
-                    if(neighbors_alive == 2 || neighbors_alive == 3){
-                        p_desk[j * height + i].state_2 = 1;
-                    } else{
-                        p_desk[j * height + i].state_2 = 0;
+                //North
+                if (i >= 1) {
+                    neighbors_alive += desk[(i - 1) * width + j].state_1;
+                }
+                else if (i == 0) {
+                    neighbors_alive += desk[(height - 1) * width + j].state_1;
+                }
+
+                //North East
+                if (i >= 1 && j < (width - 1)) {
+                    neighbors_alive += desk[(i - 1) * width + (j + 1)].state_1;
+                }
+                else if (i == 0 && j == (width - 1)) {
+                    neighbors_alive += desk[(height - 1) * width].state_1;
+                }
+                else if (i == 0 && j < (width - 1)) {
+                    neighbors_alive += desk[(height - 1) * width + (j + 1)].state_1;
+                }
+                else if (i >= 1 && j == (width - 1)) {
+                    neighbors_alive += desk[(i - 1) * width].state_1;
+                }
+
+                //West
+                if (j >= 1) {
+                    neighbors_alive += desk[i * width + (j - 1)].state_1;
+                }
+                else if (j == 0) {
+                    neighbors_alive += desk[i * width + (width - 1)].state_1;
+                }
+
+                //East
+                if (j < (width - 1)) {
+                    neighbors_alive += desk[i * width + (j + 1)].state_1;
+                }
+                else if (j == (width - 1)) {
+                    neighbors_alive += desk[i * width].state_1;
+                }
+
+                //South West
+                if (i < (height - 1) && j >= 1) {
+                    neighbors_alive += desk[(i + 1) * width + (j - 1)].state_1;
+                }
+                else if (i == (height - 1) && j == 0) {
+                    neighbors_alive += desk[width - 1].state_1;
+                }
+                else if (i == (height - 1) && j >= 1) {
+                    neighbors_alive += desk[j - 1].state_1;
+                }
+                else if (i < (height - 1) && j == 0) {
+                    neighbors_alive += desk[(i + 1) * width + (width - 1)].state_1;
+                }
+
+                //South
+                if (i < (height - 1)) {
+                    neighbors_alive += desk[(i + 1) * width + j].state_1;
+                }
+                else if (i == (height - 1)) {
+                    neighbors_alive += desk[j].state_1;
+                }
+
+                //South East
+                if (i < (height - 1) && j < (width - 1)) {
+                    neighbors_alive += desk[(i + 1) * width + (j + 1)].state_1;
+                }
+                else if (i == (height - 1) && j == (width - 1)) {
+                    neighbors_alive += desk[0].state_1;
+                }
+                else if (i == (height - 1) && j < (width - 1)) {
+                    neighbors_alive += desk[j + 1].state_1;
+                }
+                else if (i < (height - 1) && j == (width - 1)) {
+                    neighbors_alive += desk[(i + 1) * width].state_1;
+                }
+
+
+                is_cell_alive = desk[i * width + j].state_1;
+                if (is_cell_alive) {
+                    if (neighbors_alive == 2 || neighbors_alive == 3) {
+                        desk[i * width + j].state_2 = 1;
                     }
-                } else{
-                    if(neighbors_alive == 3){
-                        p_desk[j * height + i].state_2 = 1;
-                    } else{
-                        p_desk[j * height + i].state_2 = 0;
+                    else {
+                        desk[i * width + j].state_2 = 0;
+                    }
+                }
+                else {
+                    if (neighbors_alive == 3) {
+                        desk[i * width + j].state_2 = 1;
+                    }
+                    else {
+                        desk[i * width + j].state_2 = 0;
                     }
                 }
                 neighbors_alive = 0;
             }
         }
         return 2; // Какое поколение стало новым, и которое нужно напечатать
-    } else if(state == 2){
+    }
+    else if (state == 2) {
         for (i = 0; i < height; ++i) {
             for (j = 0; j < width; ++j) {
-                if(i >= 1 && j >= 1){
-                    neighbors_alive += p_desk[(j - 1) * height + (i - 1)].state_2;
+
+                //North West cell
+                if (i >= 1 && j >= 1) {
+                    neighbors_alive += desk[(i - 1) * width + (j - 1)].state_2;
                 }
-                if(i >= 1){
-                    neighbors_alive += p_desk[j * height + (i - 1)].state_2;
+                else if (i == 0 && j == 0) {
+                    neighbors_alive += desk[(height - 1) * width + (width - 1)].state_2;
                 }
-                if(i >= 1 && j < (width - 1)){
-                    neighbors_alive += p_desk[(j + 1) * height + (i - 1)].state_2;
+                else if (i == 0 && j >= 1) {
+                    neighbors_alive += desk[(height - 1) * width + (j - 1)].state_2;
                 }
-                if(j >= 1){
-                    neighbors_alive += p_desk[(j - 1) * height + i].state_2;
-                }
-                if(j < (width - 1)){
-                    neighbors_alive += p_desk[(j + 1) * height + i].state_2;
-                }
-                if(i < (height - 1) && j >= 1){
-                    neighbors_alive += p_desk[(j - 1) * height + (i + 1)].state_2;
-                }
-                if(i < (height - 1)){
-                    neighbors_alive += p_desk[j * height + (i + 1)].state_2;
-                }
-                if(i < (height - 1) && j < (width - 1)){
-                    neighbors_alive += p_desk[(j + 1) * height + (i + 1)].state_2;
+                else if (i >= 1 && j == 0) {
+                    neighbors_alive += desk[(i - 1) * width + (width - 1)].state_2;
                 }
 
-                is_cell_alive = p_desk[j * height + i].state_2;
-                if(is_cell_alive){
-                    if(neighbors_alive == 2 || neighbors_alive == 3){
-                        p_desk[j * height + i].state_1 = 1;
-                    } else{
-                        p_desk[j * height + i].state_1 = 0;
+                //North
+                if (i >= 1) {
+                    neighbors_alive += desk[(i - 1) * width + j].state_2;
+                }
+                else if (i == 0) {
+                    neighbors_alive += desk[(height - 1) * width + j].state_1;
+                }
+
+                //North East
+                if (i >= 1 && j < (width - 1)) {
+                    neighbors_alive += desk[(i - 1) * width + (j + 1)].state_2;
+                }
+                else if (i == 0 && j == (width - 1)) {
+                    neighbors_alive += desk[(height - 1) * width].state_2;
+                }
+                else if (i == 0 && j < (width - 1)) {
+                    neighbors_alive += desk[(height - 1) * width + (j + 1)].state_2;
+                }
+                else if (i >= 1 && j == (width - 1)) {
+                    neighbors_alive += desk[(i - 1) * width].state_2;
+                }
+
+                //West
+                if (j >= 1) {
+                    neighbors_alive += desk[i * width + (j - 1)].state_2;
+                }
+                else if (j == 0) {
+                    neighbors_alive += desk[i * width + (width - 1)].state_2;
+                }
+
+                //East
+                if (j < (width - 1)) {
+                    neighbors_alive += desk[i * width + (j + 1)].state_2;
+                }
+                else if (j == (width - 1)) {
+                    neighbors_alive += desk[i * width].state_2;
+                }
+
+                //South West
+                if (i < (height - 1) && j >= 1) {
+                    neighbors_alive += desk[(i + 1) * width + (j - 1)].state_2;
+                }
+                else if (i == (height - 1) && j == 0) {
+                    neighbors_alive += desk[width - 1].state_2;
+                }
+                else if (i == (height - 1) && j >= 1) {
+                    neighbors_alive += desk[j - 1].state_2;
+                }
+                else if (i < (height - 1) && j == 0) {
+                    neighbors_alive += desk[(i + 1) * width + (width - 1)].state_2;
+                }
+
+                //South
+                if (i < (height - 1)) {
+                    neighbors_alive += desk[(i + 1) * width + j].state_2;
+                }
+                else if (i == (height - 1)) {
+                    neighbors_alive += desk[j].state_2;
+                }
+
+                //South East
+                if (i < (height - 1) && j < (width - 1)) {
+                    neighbors_alive += desk[(i + 1) * width + (j + 1)].state_2;
+                }
+                else if (i == (height - 1) && j == (width - 1)) {
+                    neighbors_alive += desk[0].state_2;
+                }
+                else if (i == (height - 1) && j < (width - 1)) {
+                    neighbors_alive += desk[j + 1].state_2;
+                }
+                else if (i < (height - 1) && j == (width - 1)) {
+                    neighbors_alive += desk[(i + 1) * width].state_2;
+                }
+
+
+                is_cell_alive = desk[i * width + j].state_2;
+                if (is_cell_alive) {
+                    if (neighbors_alive == 2 || neighbors_alive == 3) {
+                        desk[i * width + j].state_1 = 1;
                     }
-                } else{
-                    if(neighbors_alive == 3){
-                        p_desk[j * height + i].state_1 = 1;
-                    } else{
-                        p_desk[j * height + i].state_1 = 0;
+                    else {
+                        desk[i * width + j].state_1 = 0;
+                    }
+                }
+                else {
+                    if (neighbors_alive == 3) {
+                        desk[i * width + j].state_1 = 1;
+                    }
+                    else {
+                        desk[i * width + j].state_1 = 0;
                     }
                 }
                 neighbors_alive = 0;
             }
         }
         return 1; // Какое поколение стало новым, и которое нужно напечатать
-    } else{
+    }
+    else {
         printf("Conway error\n");
         exit(3);
     }
@@ -255,12 +388,11 @@ unsigned short Conway(cell** desk, unsigned int height, unsigned int width, unsi
 
 
 //Рисовка начального состояния игрального поля
-void startDraw(cell** desk){
+void startDraw(cell* desk, unsigned short height, unsigned short width){
 
     unsigned short finishStartPos = 0;
     unsigned short quit = 0;
     SDL_Event e;
-    cell* p_desk = (cell*)desk;
 
     while (!finishStartPos && !quit) {
 
@@ -279,30 +411,29 @@ void startDraw(cell** desk){
             if (e.type == SDL_MOUSEBUTTONDOWN && e.button.button == SDL_BUTTON_LEFT) {
                 int x, y, cellX, cellY;
                 SDL_GetMouseState(&x, &y);
-                for (int i = 0; i < 5; i++) {
-                    if (x < (i + 1) * SCREEN_WIDTH / 5) {
+                for (int i = 0; i < width; i++) {
+                    if (x < (i + 1) * SCREEN_WIDTH / width) {
                         cellX = i;
                         break;
                     }
                 }
-                for (int i = 0; i < 5; i++) {
-                    if (y < (i + 1) * SCREEN_HEIGHT / 5) {
+                for (int i = 0; i < height; i++) {
+                    if (y < (i + 1) * SCREEN_HEIGHT / height) {
                         cellY = i;
                         break;
                     }
                 }
-                if (p_desk[cellY * NUM_CELL_X + cellX].state_1 == 1) p_desk[cellY * NUM_CELL_X + cellX].state_1 = 0;
-                else p_desk[cellY * NUM_CELL_X + cellX].state_1 = 1;
+                if (desk[cellY * width + cellX].state_1 == 1) desk[cellY * width + cellX].state_1 = 0;
+                else desk[cellY * width + cellX].state_1 = 1;
             }
         }
-        printDesk((cell**)desk, 1);
+        printDesk(desk, height, width, 1);
     }
 
 }
 
-gameLoop(cell** desk) {
+void gameLoop(cell* desk, unsigned short height, unsigned short width) {
 
-    cell* p_desk = (cell*)desk;
     unsigned short quit = 0;
     SDL_Event e;
     unsigned short state = 1;
@@ -310,32 +441,60 @@ gameLoop(cell** desk) {
     while (!quit) {
 
         //Handle events on queue
-        while (SDL_PollEvent(&e) != 0) {
+        while (1) {
+
+            SDL_PollEvent(&e);
             //User requests quit
             if (e.type == SDL_QUIT) {
                 quit = 1;
+                break;
             }
-            if (quit != 1) {
-                state = Conway((cell**)desk, NUM_CELL_X, NUM_CELL_Y, state);
-                printDesk((cell**)desk, state);
+            if (quit != 1){
+                state = Conway(desk, height, width, state);
+                printDesk(desk, height, width, state);
                 SDL_Delay(2000); //Could be not default
             }
         }
     }
-    
 }
 
-fillingZeros(cell** desk) {
+void fillingZeros(cell* desk, unsigned short height, unsigned short width) {
 
-    cell* p_desk = (cell*)desk;
-
-    for (int i = 0; i < NUM_CELL_X;i++) {
-        for (int j = 0; j < NUM_CELL_Y; j++) {
-            p_desk[j * NUM_CELL_Y + i].state_1 = 0;
-            p_desk[j * NUM_CELL_Y + i].state_2 = 0;
+    for (int i = 0; i < height; i++) {
+        for (int j = 0; j < width; j++) {
+            desk[i * width + j].state_1 = 0;
+            desk[i * width + j].state_2 = 0;
         }
     }
 }
+
+// Загрузка начального состояния игрального поля
+void Start() {
+    unsigned short height;
+    unsigned short width;
+
+    printf("Height: ");
+    scanf("%hd", &height);
+    printf("Width: ");
+    scanf("%hd", &width);
+
+
+    cell* desk = NULL;
+    desk = (cell*)malloc(height * width * sizeof(cell));
+
+    fillingZeros(desk, height, width);
+
+    startDraw(desk, height, width);
+    gameLoop(desk, height, width);
+
+
+
+    free(desk);
+    desk = NULL;
+}
+
+
+
 
 // Меню
 int main() {
@@ -344,13 +503,7 @@ int main() {
         printf("Failed to initialize!\n");
     }
     else {
-        //desk for play
-        cell desk[NUM_CELL_X][NUM_CELL_Y];
-        //fil with 0s
-        //это приведение к неконстантному указателю?
-        fillingZeros((cell**)desk);
-        startDraw((cell**)desk);
-        gameLoop((cell**)desk);
+        Start();
     }
     //Free resources and close SDL
     closer();

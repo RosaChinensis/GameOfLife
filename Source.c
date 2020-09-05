@@ -6,6 +6,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
+#include <windows.h>
 #pragma warning (disable : 4996)
 
 //Screen dimension constants
@@ -18,6 +19,13 @@ const int SCREEN_HEIGHT = 480;
 int init();
 //Frees media and shuts down SDL
 void closer();
+
+//time report
+long perf_time() {
+    LARGE_INTEGER time;
+    QueryPerformanceCounter(&time);
+    return time.QuadPart;
+}
 
 //The window we'll be rendering to
 SDL_Window* gWindow = NULL;
@@ -451,8 +459,15 @@ void gameLoop(cell* desk, unsigned short height, unsigned short width, unsigned 
                 break;
             }
             if (quit != 1){
+
+                long time1 = perf_time();
+	
                 state = Conway(desk, height, width, state);
                 printDesk(desk, height, width, state);
+
+                time1 = perf_time() - time1;
+                printf("Total time: %d\n", time1);
+
                 SDL_Delay(delay);
             }
         }
